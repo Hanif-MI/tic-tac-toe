@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tic Tac Toe</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f4f4f4;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        grid-template-rows: repeat(3, 100px);
+        gap: 5px;
+      }
+      .cell {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .cell.taken {
+        cursor: not-allowed;
+      }
+      .status {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="board" id="board">
+        <!-- Cells will be dynamically generated -->
+      </div>
+      <div class="status" id="status">Waiting for players...</div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      let isYourTurn = true;
+      const yourSelectionIndexs = [];
+
+      const board = document.getElementById("board");
+      const status = document.getElementById("status");
+
+      // Create the 3x3 grid
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.dataset.index = i;
+        board.appendChild(cell);
+      }
+
+      // Listen for cell clicks
+      board.addEventListener("click", (e) => {
+        const cell = e.target;
+        if (
+          cell.classList.contains("cell") &&
+          !cell.classList.contains("taken") &&
+          isYourTurn
+        ) {
+          const index = cell.dataset.index;
+          console.log("socket.id",socket.id);
+          socket.emit("makeMove", { index ,id : socket.id });
+          yourSelectionIndexs.push(index);
+          isYourTurn = false;
+        }
+      });
+
+      socket.on("makeMove", (msg) => {
+        console.log("Received index:", msg.index); // Use msg.index instead of index
+        const cell = document.querySelector(`.cell[data-index='${msg.index}']`);
+        if (cell) {
+          if (yourSelectionIndexs.includes(msg.index)) {
+            cell.textContent = "X"; // Player's own move
+            cell.classList.add("taken");
+          } else {
+            cell.textContent = "O"; // Opponent's move
+            cell.classList.add("taken");
+          }
+        } else {
+          console.log("Cell not found");
+        }
+        isYourTurn = true;
+      });
+
+      
+      socket.on("gameStatus", (message) => {
+        status.textContent = message;
+      });
+
+      socket.on("resetBoard", () => {
+        const cells = document.querySelectorAll(".cell");
+        cells.forEach((cell) => {
+          cell.textContent = "";
+          cell.classList.remove("taken");
+        });
+        status.textContent = "Game reset. Waiting for players...";
+      });
+    </script>
+  </body>
+</html>
