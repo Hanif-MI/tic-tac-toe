@@ -43,12 +43,6 @@ io.on("connection", (socket) => {
     }
   });
 
-
-  socket.on('requestReset', (playerId) => {
-    // Validate reset request if needed
-    io.emit('gameReset');  // Broadcast reset to all clients
-  });
-
   socket.on("disconnect", () => {
     console.log("A user disconnected:", socket.id);
     players = [];
