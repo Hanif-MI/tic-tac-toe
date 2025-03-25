@@ -44,10 +44,27 @@
   </head>
   <body>
     <div>
+      <div class="status" id="player">Waiting for players...</div>
       <div class="board" id="board">
         <!-- Cells will be dynamically generated -->
       </div>
       <div class="status" id="status">Waiting for players...</div>
+      <div style="text-align: center; margin-top: 20px">
+        <button
+          id="resetButton"
+          style="
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+          "
+        >
+          Reset
+        </button>
+      </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -58,11 +75,14 @@
 
       const board = document.getElementById("board");
       const status = document.getElementById("status");
+      const player = document.getElementById("player");
+      const resetButton = document.getElementById("resetButton");
 
       // Create the 3x3 grid
       for (let i = 0; i < 9; i++) {
         const cell = document.createElement("div");
         cell.classList.add("cell");
+        cell.style.borderRadius = "10px";
         cell.dataset.index = i;
         board.appendChild(cell);
       }
@@ -76,15 +96,22 @@
           isYourTurn
         ) {
           const index = cell.dataset.index;
-          console.log("socket.id",socket.id);
-          socket.emit("makeMove", { index ,id : socket.id });
+          console.log("socket.id", socket.id);
+          socket.emit("makeMove", { index, id: socket.id });
           yourSelectionIndexs.push(index);
           isYourTurn = false;
         }
+
+        if (!isYourTurn) {
+          status.textContent = "It's not your turn!";
+        }
+      });
+
+      resetButton.addEventListener("click", () => {
+        window.location.reload(); 
       });
 
       socket.on("makeMove", (msg) => {
-        console.log("Received index:", msg.index); // Use msg.index instead of index
         const cell = document.querySelector(`.cell[data-index='${msg.index}']`);
         if (cell) {
           if (yourSelectionIndexs.includes(msg.index)) {
@@ -97,12 +124,59 @@
         } else {
           console.log("Cell not found");
         }
+
+        // Check for a win
+        const winningCombinations = [
+          [0, 1, 2],
+          [3, 4, 5],
+          [6, 7, 8],
+          [0, 3, 6],
+          [1, 4, 7],
+          [2, 5, 8],
+          [0, 4, 8],
+          [2, 4, 6],
+        ];
+
+        const cells = document.querySelectorAll(".cell");
+        for (const combination of winningCombinations) {
+          const [a, b, c] = combination;
+          if (
+            cells[a].textContent &&
+            cells[a].textContent === cells[b].textContent &&
+            cells[a].textContent === cells[c].textContent
+          ) {
+            status.textContent = `${cells[a].textContent} wins!`;
+            cells[a].style.background = "green";
+            cells[b].style.background = "green";
+            cells[c].style.background = "green";
+            isYourTurn = false; // Stop further moves
+            return;
+          }
+        }
+
+        // Check for a draw
+        const isDraw = [...cells].every((cell) => cell.textContent !== "");
+        if (isDraw) {
+          status.textContent = "It's a draw!";
+          resetButton.textContent = "Play Again";
+          isYourTurn = false; // Stop further moves
+        }
+
         isYourTurn = true;
       });
 
-      
+      socket.on("playerAssignment", (message) => {
+        player.textContent = `You are player ${message}`;
+      });
+
       socket.on("gameStatus", (message) => {
         status.textContent = message;
+        if (
+          message === "A player disconnected. Waiting for players..." ||
+          message === "Game reset. Waiting for players..."
+        ) {
+          window.location.reload(); // Reload only when game resets or a player disconnects
+        }
       });
 
       socket.on("resetBoard", () => {

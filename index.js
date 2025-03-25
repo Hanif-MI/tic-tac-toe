@@ -23,9 +23,9 @@ io.on("connection", (socket) => {
   // Assign player (X or O)
   if (players.length < 2) {
     players.push(socket.id);
-    socket.emit("playerAssignment", players.length === 1 ? "X" : "O");
+    socket.emit("playerAssignment", players.length === 1 ? "1" : "2");
     if (players.length === 2) {
-      io.emit("gameStatus", "Game started! Player X's turn.");
+      io.emit("gameStatus", "Game started! Player 1 turn.");
     }
   } else {
     socket.emit("gameStatus", "Game is full!");
@@ -39,13 +39,19 @@ io.on("connection", (socket) => {
         player: currentTurn === 0 ? "X" : "O",
       });
       currentTurn = 1 - currentTurn;
-      io.emit("gameStatus", `Player ${currentTurn === 0 ? "X" : "O"}'s turn.`, socket.id);
+      io.emit("gameStatus", `Player ${currentTurn === 0 ? "1" : "2"}'s turn.`, socket.id);
     }
+  });
+
+
+  socket.on('requestReset', (playerId) => {
+    // Validate reset request if needed
+    io.emit('gameReset');  // Broadcast reset to all clients
   });
 
   socket.on("disconnect", () => {
     console.log("A user disconnected:", socket.id);
-    players = players.filter((id) => id !== socket.id);
+    players = [];
     currentTurn = 0;
     io.emit("gameStatus", "A player disconnected. Waiting for players...");
     io.emit("resetBoard");
