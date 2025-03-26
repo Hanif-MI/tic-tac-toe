@@ -6,186 +6,375 @@
     <title>Tic Tac Toe</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family: "Poppins", sans-serif;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        min-height: 100vh;
         margin: 0;
-        background-color: #f4f4f4;
+        background: linear-gradient(135deg, #6e48aa, #9d50bb);
+        color: #fff;
       }
+
+      .container {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 2.5rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 450px;
+        width: 90%;
+      }
+
       .board {
         display: grid;
-        grid-template-columns: repeat(3, 100px);
-        grid-template-rows: repeat(3, 100px);
-        gap: 5px;
+        grid-template-columns: repeat(
+          3,
+          120px
+        ); /* Fixed width for perfect alignment */
+        grid-template-rows: repeat(
+          3,
+          120px
+        ); /* Fixed height for square cells */
+        gap: 8px; /* Consistent gap */
+        justify-content: center; /* Center the grid horizontally */
+        margin: 25px auto;
+        display: none;
       }
+
       .cell {
-        width: 100px;
-        height: 100px;
+        width: 120px;
+        height: 120px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 10px;
+        font-size: 48px; /* Larger font for better visibility */
+        font-weight: 700;
+        color: #333; /* Darker color for contrast */
         display: flex;
         justify-content: center;
         align-items: center;
-        background-color: #fff;
-        border: 1px solid #ccc;
-        font-size: 24px;
-        font-weight: bold;
         cursor: pointer;
+        transition: transform 0.2s, background 0.3s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       }
+
+      .cell:hover:not(.taken) {
+        transform: scale(1.03);
+        background: #fff;
+      }
+
       .cell.taken {
         cursor: not-allowed;
+        background: rgba(255, 255, 255, 0.75);
       }
-      .status {
-        margin-top: 20px;
-        text-align: center;
+
+      #status {
+        font-size: 22px;
+        margin-bottom: 20px;
+        color: #fff;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* Stronger shadow for visibility */
+        font-weight: 500;
+      }
+
+      #playerLabel {
+        font-size: 26px;
+        margin-top: 15px;
+        font-weight: 600;
+        color: #f0f0f0; /* Slightly brighter for readability */
+      }
+
+      button {
+        padding: 12px 30px;
         font-size: 18px;
+        font-weight: 600;
+        background: #ff6f61;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s;
+        box-shadow: 0 4px 15px rgba(255, 111, 97, 0.4);
+      }
+
+      #resetButton {
+        display: none;
+        margin: 20px auto 0; /* Center horizontally */
+      }
+
+      #resetButton[style*="display: block"] {
+        display: block !important;
+      }
+
+      button:hover {
+        background: #ff8a75;
+        transform: translateY(-3px);
+      }
+
+      #linkContainer {
+        display: none;
+        margin-top: 20px;
+      }
+
+      #linkContainer p {
+        margin: 0 0 12px;
+        font-size: 18px;
+        color: #f0f0f0;
+        font-weight: 400;
+      }
+
+      #gameLink {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border: none;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        transition: box-shadow 0.2s;
+      }
+
+      #gameLink:focus {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(255, 111, 97, 0.5);
+      }
+
+      .board.show {
+        display: grid;
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
     </style>
   </head>
   <body>
-    <div>
-      <div class="status" id="player">Waiting for players...</div>
-      <div class="board" id="board">
-        <!-- Cells will be dynamically generated -->
-      </div>
-      <div class="status" id="status">Waiting for players...</div>
-      <div style="text-align: center; margin-top: 20px">
-        <button
-          id="resetButton"
-          style="
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-          "
-        >
+    <div style="display: flex; justify-content: space-evenly; width: 80%">
+      <div class="container " style="align-content: center">
+        <button id="createGameButton">Create Game</button>
+        <div id="linkContainer">
+          <p id="test">Share this link with your friend:</p>
+          <input type="text" id="gameLink" readonly />
+        </div>
+        <div id="playerLabel">Connecting...</div>
+        <div id="status">Click "Create Game" to start</div>
+        <div class="board" id="board"></div>
+        <button id="resetButton" style="display: none; justify-items: center">
           Reset
         </button>
+      </div>
+      <div id="chatDiv" class="container " style="display: none;">
+        <p id="test">Share this link with your friend:</p>
+        <div id="linkContainer">
+          <input type="text" id="gameLink" readonly />
+          <button id="createGameButton">Create Game</button>
+        </div>
+        <div id="chatContainer" style="margin-top: 20px">
+          <h3>Chat</h3>
+          <div
+            id="chatBox"
+            style="
+              height: 150px;
+              overflow-y: auto;
+              background: rgba(255, 255, 255, 0.15);
+              padding: 10px;
+              border-radius: 10px;
+              margin-bottom: 10px;
+            "
+          ></div>
+          <input
+            type="text"
+            id="chatInput"
+            placeholder="Type your message..."
+            style="
+              width: calc(100% - 60px);
+              padding: 10px;
+              border-radius: 10px;
+              border: none;
+              margin-right: 10px;
+            "
+          />
+          <button
+            id="sendButton"
+            style="
+              padding: 10px 20px;
+              border-radius: 10px;
+              background: #ff6f61;
+              color: #fff;
+              border: none;
+              cursor: pointer;
+              margin-top: 10px;
+            "
+          >
+            Send
+          </button>
+        </div>
       </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
-      let isYourTurn = true;
-      const yourSelectionIndexs = [];
+      let myPlayer = null;
+      let myTurn = false;
+      let gameId = null;
 
-      const board = document.getElementById("board");
-      const status = document.getElementById("status");
-      const player = document.getElementById("player");
+      const createGameButton = document.getElementById("createGameButton");
+      const linkContainer = document.getElementById("linkContainer");
+      const gameLink = document.getElementById("gameLink");
+      const boardEl = document.getElementById("board");
+      const statusEl = document.getElementById("status");
+      const playerLabelEl = document.getElementById("playerLabel");
       const resetButton = document.getElementById("resetButton");
+      const test = document.getElementById("test");
+      const chatBox = document.getElementById("chatBox");
+      const chatInput = document.getElementById("chatInput");
+      const sendButton = document.getElementById("sendButton");
+      const chatDiv = document.getElementById("chatDiv");
 
-      // Create the 3x3 grid
+      sendButton.addEventListener("click", () => {
+        const message = chatInput.value.trim();
+        if (message) {
+          socket.emit("sendMessage", { gameId, message });
+          chatInput.value = "";
+        }
+      });
+
+      chatInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          sendButton.click();
+        }
+      });
+
+      socket.on("receiveMessage", (data) => {
+        console.log(data.message);
+        const messageEl = document.createElement("p");
+        messageEl.textContent = `${data.player}: ${data.message}`;
+        if (data.player === myPlayer) {
+          messageEl.style.textAlign = "right";
+          // messageEl.style.color = "#FFFFFF";  
+        }else{
+          messageEl.style.textAlign = "left";
+          // messageEl.style.color = "#000000";
+        }
+        messageEl.style.margin = "5px 0";
+        chatBox.appendChild(messageEl);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the latest message
+      });
+
+      // Check if joining via game link
+      const urlParams = new URLSearchParams(window.location.search);
+      gameId = window.location.pathname.split("/game/")[1];
+      if (gameId) {
+        socket.emit("joinGame", gameId);
+        createGameButton.style.display = "none";
+        chatDiv.style.display = "block";
+      }
+
+      createGameButton.addEventListener("click", () => {
+        socket.emit("createGame");
+        createGameButton.style.display = "none";
+      });
+
+      // Generate board cells
       for (let i = 0; i < 9; i++) {
         const cell = document.createElement("div");
         cell.classList.add("cell");
-        cell.style.borderRadius = "10px";
         cell.dataset.index = i;
-        board.appendChild(cell);
+        boardEl.appendChild(cell);
       }
 
-      // Listen for cell clicks
-      board.addEventListener("click", (e) => {
+      boardEl.addEventListener("click", (e) => {
         const cell = e.target;
         if (
           cell.classList.contains("cell") &&
           !cell.classList.contains("taken") &&
-          isYourTurn
+          myTurn
         ) {
           const index = cell.dataset.index;
-          console.log("socket.id", socket.id);
-          socket.emit("makeMove", { index, id: socket.id });
-          yourSelectionIndexs.push(index);
-          isYourTurn = false;
-        }
-
-        if (!isYourTurn) {
-          status.textContent = "It's not your turn!";
+          socket.emit("makeMove", { gameId, index });
+        } else if (!myTurn) {
+          statusEl.textContent = "Wait for your turn!";
         }
       });
 
       resetButton.addEventListener("click", () => {
-        window.location.reload(); 
+        socket.emit("resetGame", gameId);
       });
 
-      socket.on("makeMove", (msg) => {
-        const cell = document.querySelector(`.cell[data-index='${msg.index}']`);
+      socket.on("gameCreated", (data) => {
+        gameId = data.gameId;
+        linkContainer.style.display = "block";
+        gameLink.value = data.link;
+        statusEl.textContent = "Waiting for second player...";
+      });
+
+      socket.on("playerAssignment", (data) => {
+        myPlayer = data.player;
+        playerLabelEl.textContent = `You are "${myPlayer}"`;
+        boardEl.classList.add("show");
+        resetButton.style.display = "block";
+      });
+
+      socket.on("updateBoard", (data) => {
+        const { index, player } = data;
+        const cell = document.querySelector(`.cell[data-index='${index}']`);
         if (cell) {
-          if (yourSelectionIndexs.includes(msg.index)) {
-            cell.textContent = "X"; // Player's own move
-            cell.classList.add("taken");
-          } else {
-            cell.textContent = "O"; // Opponent's move
-            cell.classList.add("taken");
-          }
-        } else {
-          console.log("Cell not found");
-        }
-
-        // Check for a win
-        const winningCombinations = [
-          [0, 1, 2],
-          [3, 4, 5],
-          [6, 7, 8],
-          [0, 3, 6],
-          [1, 4, 7],
-          [2, 5, 8],
-          [0, 4, 8],
-          [2, 4, 6],
-        ];
-
-        const cells = document.querySelectorAll(".cell");
-        for (const combination of winningCombinations) {
-          const [a, b, c] = combination;
-          if (
-            cells[a].textContent &&
-            cells[a].textContent === cells[b].textContent &&
-            cells[a].textContent === cells[c].textContent
-          ) {
-            status.textContent = `${cells[a].textContent} wins!`;
-            cells[a].style.background = "green";
-            cells[b].style.background = "green";
-            cells[c].style.background = "green";
-            isYourTurn = false; // Stop further moves
-            return;
-          }
-        }
-
-        // Check for a draw
-        const isDraw = [...cells].every((cell) => cell.textContent !== "");
-        if (isDraw) {
-          status.textContent = "It's a draw!";
-          resetButton.textContent = "Play Again";
-          isYourTurn = false; // Stop further moves
-        }
-
-        isYourTurn = true;
-      });
-
-      socket.on("playerAssignment", (message) => {
-        player.textContent = `You are player ${message}`;
-      });
-
-      socket.on("gameStatus", (message) => {
-        status.textContent = message;
-        if (
-          message === "A player disconnected. Waiting for players..." ||
-          message === "Game reset. Waiting for players..."
-        ) {
-          window.location.reload(); // Reload only when game resets or a player disconnects
+          cell.textContent = player;
+          cell.classList.add("taken");
         }
       });
 
-      socket.on("resetBoard", () => {
-        const cells = document.querySelectorAll(".cell");
-        cells.forEach((cell) => {
+      socket.on("gameStatus", (data) => {
+        statusEl.textContent = data.message;
+        myTurn = data.turn === myPlayer;
+
+        if (data.message.includes("Game started!")) {
+          resetButton.style.display = "block";
+          test.style.display = "none";
+          gameLink.style.display = "none";
+          chatDiv.style.display = "block";
+        }
+      });
+
+      socket.on("gameReset", () => {
+        document.querySelectorAll(".cell").forEach((cell) => {
           cell.textContent = "";
           cell.classList.remove("taken");
+          cell.style.backgroundColor = "rgba(255, 255, 255, 0.95)";
         });
-        status.textContent = "Game reset. Waiting for players...";
+        statusEl.textContent = "Game reset. Waiting for players...";
+      });
+
+      socket.on("gameOver", (data) => {
+        if (data.winningCombination) {
+          data.winningCombination.forEach((index) => {
+            const cell = document.querySelector(`.cell[data-index='${index}']`);
+            if (cell) cell.style.backgroundColor = "#66ff66";
+          });
+        }
+        myTurn = false;
+      });
+
+      // Click-to-copy functionality
+      gameLink.addEventListener("click", () => {
+        gameLink.select();
+        document.execCommand("copy");
+        statusEl.textContent = "Link copied to clipboard!";
+        setTimeout(() => {
+          statusEl.textContent = "Waiting for second player...";
+        }, 2000);
       });
     </script>
   </body>
