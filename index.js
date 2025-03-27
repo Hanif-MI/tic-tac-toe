@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import { Server } from "socket.io";
 import { createServer } from "http";
@@ -158,8 +160,10 @@ io.on("connection", (socket) => {
 
   socket.on("sendMessage", ({ gameId, message }) => {
     console.log(message);
-    io.to(gameId).emit("receiveMessage", {message, player : getPlayerSymbol(socket.id, games.get(gameId))});
-  });
+    if (games.get(gameId).players.includes(socket.id)) {
+      io.to(gameId).emit("receiveMessage", { message, player: "Spectator" });
+    }
+ });
 });
 
 server.listen(3000, () => {
