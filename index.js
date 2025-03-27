@@ -161,9 +161,14 @@ io.on("connection", (socket) => {
   socket.on("sendMessage", ({ gameId, message }) => {
     console.log(message);
     if (games.get(gameId).players.includes(socket.id)) {
+      io.to(gameId).emit("receiveMessage", {
+        message,
+        player: getPlayerSymbol(socket.id, games.get(gameId)),
+      });
+    } else {
       io.to(gameId).emit("receiveMessage", { message, player: "Spectator" });
     }
- });
+  });
 });
 
 server.listen(3000, () => {

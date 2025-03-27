@@ -339,6 +339,7 @@
       socket.on("gameStatus", (data) => {
         statusEl.textContent = data.message;
         myTurn = data.turn === myPlayer;
+        boardEl.style.display = "block";
 
         if (data.message.includes("Game started!")) {
           resetButton.style.display = "block";
