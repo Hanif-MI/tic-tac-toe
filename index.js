@@ -66,7 +66,7 @@ io.on("connection", (socket) => {
     socket.join(gameId);
     socket.emit("gameCreated", {
       gameId,
-      link: `http://${myIp}:3000/game/${gameId}`,
+      link: `${process.env.appurl}/game/${gameId}`,
     });
   });
 
