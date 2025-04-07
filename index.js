@@ -26,6 +26,7 @@ app.get("/game/:gameId", (req, res) => {
 
 // Store game instances
 const games = new Map(); // gameId -> { players: [socketId1, socketId2], board[], turn }
+const randomPlayer = [];
 
 const getPlayerSymbol = (socketId, game) => {
   return game.players[0] === socketId ? "X" : "O";
@@ -54,6 +55,43 @@ io.on("connection", (socket) => {
       socket.emit("gameCreated", {
         gameId,
         link: `${process.env.appurl}/game/${gameId}?type=${type}`,
+      });
+    }
+  });
+
+  socket.on("joinRandomGame", () => {
+    if (randomPlayer.length > 0) {
+      const gameId = randomPlayer.pop();
+      const game = games.get(gameId);
+      if (game) {
+        game.players.push(socket.id);
+        socket.join(gameId);
+        const roomSockets = io.sockets.adapter.rooms.get(gameId);
+        roomSockets.forEach((socketId) => {
+          const symbol = getPlayerSymbol(socketId, game);
+          io.to(socketId).emit("playerAssignment", { player: symbol });
+        });
+        socket.emit("joinGame1", gameId);
+        io.to(gameId).emit("gameStatus", {
+          message: `Game started! "${game.turn}" turn.`,
+          turn: game.turn,
+        });
+      } else {
+        socket.emit("gameStatus", { message: "Invalid game ID!" });
+      }
+    } else {
+      const gameId = uuidv4(); // Generate unique game ID
+      games.set(gameId, {
+        players: [socket.id],
+        board: Array(9).fill(null),
+        turn: "X",
+        type: gameTypes.RANDOM,
+      });
+      socket.join(gameId);
+      randomPlayer.push(gameId);
+      socket.emit("randomJoinGame", gameId);
+      socket.emit("gameStatus", {
+        message: "Waiting for another player to join...",
       });
     }
   });
@@ -108,6 +146,7 @@ io.on("connection", (socket) => {
     console.log("Game ID:", gameId);
     console.log("Games :", games);
     console.log("Game :", game);
+    console.log("gameId :", gameId);
     if (game.type === gameTypes.COMPUTER) {
       console.log("Computer move");
 
