@@ -26,63 +26,14 @@
         border: 1px solid rgba(255, 255, 255, 0.2);
         max-width: 450px;
         width: 90%;
+        margin: 10px;
       }
 
-      .board {
-        display: grid;
-        grid-template-columns: repeat(
-          3,
-          120px
-        ); /* Fixed width for perfect alignment */
-        grid-template-rows: repeat(
-          3,
-          120px
-        ); /* Fixed height for square cells */
-        gap: 8px; /* Consistent gap */
-        justify-content: center; /* Center the grid horizontally */
-        margin: 25px auto;
-        display: none;
-      }
-
-      .cell {
-        width: 120px;
-        height: 120px;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 10px;
-        font-size: 48px; /* Larger font for better visibility */
-        font-weight: 700;
-        color: #333; /* Darker color for contrast */
+      .button-group {
         display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        transition: transform 0.2s, background 0.3s;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-
-      .cell:hover:not(.taken) {
-        transform: scale(1.03);
-        background: #fff;
-      }
-
-      .cell.taken {
-        cursor: not-allowed;
-        background: rgba(255, 255, 255, 0.75);
-      }
-
-      #status {
-        font-size: 22px;
+        flex-direction: column;
+        gap: 15px;
         margin-bottom: 20px;
-        color: #fff;
-        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* Stronger shadow for visibility */
-        font-weight: 500;
-      }
-
-      #playerLabel {
-        font-size: 26px;
-        margin-top: 15px;
-        font-weight: 600;
-        color: #f0f0f0; /* Slightly brighter for readability */
       }
 
       button {
@@ -96,15 +47,6 @@
         cursor: pointer;
         transition: background 0.3s, transform 0.2s;
         box-shadow: 0 4px 15px rgba(255, 111, 97, 0.4);
-      }
-
-      #resetButton {
-        display: none;
-        margin: 20px auto 0; /* Center horizontally */
-      }
-
-      #resetButton[style*="display: block"] {
-        display: block !important;
       }
 
       button:hover {
@@ -142,6 +84,66 @@
         box-shadow: 0 0 0 4px rgba(255, 111, 97, 0.5);
       }
 
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, 120px);
+        grid-template-rows: repeat(3, 120px);
+        gap: 8px;
+        justify-content: center;
+        margin: 25px auto;
+        display: none;
+      }
+
+      .cell {
+        width: 120px;
+        height: 120px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 10px;
+        font-size: 48px;
+        font-weight: 700;
+        color: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.3s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .cell:hover:not(.taken) {
+        transform: scale(1.03);
+        background: #fff;
+      }
+
+      .cell.taken {
+        cursor: not-allowed;
+        background: rgba(255, 255, 255, 0.75);
+      }
+
+      #status {
+        font-size: 22px;
+        margin-bottom: 20px;
+        color: #fff;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        font-weight: 500;
+      }
+
+      #playerLabel {
+        font-size: 26px;
+        margin-top: 15px;
+        font-weight: 600;
+        color: #f0f0f0;
+      }
+
+      #resetButton {
+        display: none;
+        margin: 20px auto 0;
+      }
+
+      #resetButton[style*="display: block"] {
+        display: block !important;
+      }
+
       .board.show {
         display: grid;
         animation: fadeIn 0.5s ease-in-out;
@@ -160,21 +162,25 @@
     </style>
   </head>
   <body>
-    <div style="display: flex; justify-content: space-evenly; width: 80%">
-      <div class="container " style="align-content: center">
-        <button id="createGameButton">Create Game</button>
+    <div style="display: flex; justify-content: space-evenly; flex-wrap: wrap; width: 80%">
+      <div class="container">
+        <!-- Game Options Section -->
+        <div class="button-group" id="gameOptions">
+          <button id="createGameButton">Create Game</button>
+          <button id="playComputerButton">Play with Computer</button>
+          <button id="playRandomButton">Play with Random Opponent</button>
+        </div>
+        <!-- Link Container -->
         <div id="linkContainer">
           <p id="test">Share this link with your friend:</p>
           <input type="text" id="gameLink" readonly />
         </div>
         <div id="playerLabel">Connecting...</div>
-        <div id="status">Click "Create Game" to start</div>
+        <div id="status">Select an option to start</div>
         <div class="board" id="board"></div>
-        <button id="resetButton" style="display: none; justify-items: center">
-          Reset
-        </button>
+        <button id="resetButton" style="display: none;">Reset</button>
       </div>
-      <div id="chatDiv" class="container " style="display: none;">
+      <div id="chatDiv" class="container" style="display: none;">
         <p id="test">Share this link with your friend:</p>
         <div id="linkContainer">
           <input type="text" id="gameLink" readonly />
@@ -231,6 +237,8 @@
       let gameId = null;
 
       const createGameButton = document.getElementById("createGameButton");
+      const playComputerButton = document.getElementById("playComputerButton");
+      const playRandomButton = document.getElementById("playRandomButton");
       const linkContainer = document.getElementById("linkContainer");
       const gameLink = document.getElementById("gameLink");
       const boardEl = document.getElementById("board");
@@ -242,6 +250,7 @@
       const chatInput = document.getElementById("chatInput");
       const sendButton = document.getElementById("sendButton");
       const chatDiv = document.getElementById("chatDiv");
+      const gameOptions = document.getElementById("gameOptions");
 
       sendButton.addEventListener("click", () => {
         const message = chatInput.value.trim();
@@ -258,19 +267,16 @@
       });
 
       socket.on("receiveMessage", (data) => {
-        console.log(data.message);
         const messageEl = document.createElement("p");
         messageEl.textContent = `${data.player}: ${data.message}`;
         if (data.player === myPlayer) {
           messageEl.style.textAlign = "right";
-          // messageEl.style.color = "#FFFFFF";  
-        }else{
+        } else {
           messageEl.style.textAlign = "left";
-          // messageEl.style.color = "#000000";
         }
         messageEl.style.margin = "5px 0";
         chatBox.appendChild(messageEl);
-        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the latest message
+        chatBox.scrollTop = chatBox.scrollHeight;
       });
 
       // Check if joining via game link
@@ -278,13 +284,30 @@
       gameId = window.location.pathname.split("/game/")[1];
       if (gameId) {
         socket.emit("joinGame", gameId);
+        gameOptions.style.display = "none";
         createGameButton.style.display = "none";
         chatDiv.style.display = "block";
       }
+      
 
+      // Create Game option (for friends)
       createGameButton.addEventListener("click", () => {
         socket.emit("createGame");
-        createGameButton.style.display = "none";
+        gameOptions.style.display = "none";
+      });
+
+      // Play with Computer option
+      playComputerButton.addEventListener("click", () => {
+        socket.emit("createGame","computer");
+        gameOptions.style.display = "none";
+        statusEl.textContent = "Connecting to Computer Game...";
+      });
+
+      // Play with Random Opponent option
+      playRandomButton.addEventListener("click", () => {
+        socket.emit("joinRandomGame");
+        gameOptions.style.display = "none";
+        statusEl.textContent = "Searching for a random opponent...";
       });
 
       // Generate board cells
@@ -297,12 +320,16 @@
 
       boardEl.addEventListener("click", (e) => {
         const cell = e.target;
+        console.log(gameId);
+        
         if (
           cell.classList.contains("cell") &&
           !cell.classList.contains("taken") &&
           myTurn
         ) {
           const index = cell.dataset.index;
+          console.log("Cell clicked1");
+          console.log("Cell clicked:", index, gameId);
           socket.emit("makeMove", { gameId, index });
         } else if (!myTurn) {
           statusEl.textContent = "Wait for your turn!";
@@ -319,6 +346,12 @@
         gameLink.value = data.link;
         statusEl.textContent = "Waiting for second player...";
       });
+
+      socket.on("joinGame1", (game) => {
+        console.log("Joining game:", game);
+        gameId = game;
+        socket.emit("joinGame", gameId);
+      })
 
       socket.on("playerAssignment", (data) => {
         myPlayer = data.player;
@@ -339,7 +372,6 @@
       socket.on("gameStatus", (data) => {
         statusEl.textContent = data.message;
         myTurn = data.turn === myPlayer;
-
         if (data.message.includes("Game started!")) {
           resetButton.style.display = "block";
           test.style.display = "none";
@@ -367,7 +399,7 @@
         myTurn = false;
       });
 
-      // Click-to-copy functionality
+      // Click-to-copy functionality for the game link
       gameLink.addEventListener("click", () => {
         gameLink.select();
         document.execCommand("copy");
