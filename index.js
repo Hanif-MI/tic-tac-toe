@@ -168,21 +168,37 @@ io.on("connection", (socket) => {
         }
       });
       console.log("board", robotM, opponentMove);
-      try {
-        const response = await getNextMove(opponentMove, robotM);
-        console.log("AI response:", response.text);
-
-        const robotMove = Number(response.text);
-        const robotSymbol = playerSymbol === "X" ? "O" : "X";
-
-        game.board[robotMove] = robotSymbol;
-        io.to(gameId).emit("updateBoard", {
-          index: Number(response.text),
-          player: robotSymbol,
-        });
-        game.turn = playerSymbol;
-      } catch (error) {
-        console.error("Error:", error.message);
+      
+      let winResult = checkWin(game.board);
+      
+      if (!winResult && robotM.length + opponentMove.length < 9) {
+        try {
+          const response = await getNextMove(opponentMove, robotM);
+          console.log("AI response:", response.text);
+  
+          const robotMove = Number(response.text);
+          const robotSymbol = playerSymbol === "X" ? "O" : "X";
+  
+          game.board[robotMove] = robotSymbol;
+          io.to(gameId).emit("updateBoard", {
+            index: Number(response.text),
+            player: robotSymbol,
+          });
+          game.turn = playerSymbol;
+          winResult = checkWin(game.board);
+          if (winResult) {
+            io.to(gameId).emit("gameStatus", {
+              message: `${winResult.winner} wins!`,
+              turn: null,
+            });
+            io.to(gameId).emit("gameOver", {
+              winningCombination: winResult.combination,
+            });
+            return;
+          } 
+        } catch (error) {
+          console.error("Error:", error.message);
+        } 
       }
     } else {
       if (!game || game.players.length < 2) return;
@@ -236,6 +252,7 @@ io.on("connection", (socket) => {
     console.log("User disconnected:", socket.id);
     for (const [gameId, game] of games) {
       if (game.players.includes(socket.id)) {
+        randomPlayer.pop(gameId);
         games.delete(gameId);
         io.to(gameId).emit("gameStatus", {
           message: "A player disconnected. Game ended.",

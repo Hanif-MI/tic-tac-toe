@@ -394,47 +394,83 @@
         font-size: 18px;
       }
       
-      /* Loading animation */
-      .loading {
-        display: inline-block;
+      /* NEW: Enhanced Waiting Animation */
+      .waiting-animation {
         position: relative;
-        width: 80px;
-        height: 20px;
+        width: 240px;
+        height: 240px;
+        margin: 0 auto 20px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: 8px;
       }
       
-      .loading div {
+      .animation-cell {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 42px;
+        font-weight: bold;
+        overflow: hidden;
+      }
+      
+      @keyframes animateX {
+        0% { transform: scale(0) rotate(0deg); opacity: 0; }
+        20% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+        40% { transform: scale(1) rotate(0deg); opacity: 1; }
+        80% { transform: scale(1) rotate(0deg); opacity: 1; }
+        100% { transform: scale(0) rotate(360deg); opacity: 0; }
+      }
+      
+      @keyframes animateO {
+        0% { transform: scale(0); opacity: 0; }
+        20% { transform: scale(1.2); opacity: 1; }
+        40% { transform: scale(1); opacity: 1; }
+        80% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(0); opacity: 0; }
+      }
+      
+      .animation-x {
+        color: #ff6f61;
+        animation: animateX 3s infinite;
+      }
+      
+      .animation-o {
+        color: #5b8def;
+        animation: animateO 3s infinite;
+      }
+      
+      @keyframes pulseGlow {
+        0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+        50% { box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.6); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+      }
+      
+      .waiting-animation::after {
+        content: '';
         position: absolute;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: #fff;
-        animation: loading 1.2s linear infinite;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 15px;
+        animation: pulseGlow 2s infinite;
+        z-index: -1;
+        pointer-events: none;
       }
       
-      .loading div:nth-child(1) {
-        animation-delay: 0s;
-        left: 8px;
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
       }
       
-      .loading div:nth-child(2) {
-        animation-delay: 0.4s;
-        left: 32px;
-      }
-      
-      .loading div:nth-child(3) {
-        animation-delay: 0.8s;
-        left: 56px;
-      }
-      
-      @keyframes loading {
-        0%, 80%, 100% { 
-          transform: scale(0);
-          opacity: 0;
-        }
-        40% { 
-          transform: scale(1);
-          opacity: 1;
-        }
+      .shake {
+        animation: shake 0.5s ease-in-out;
       }
     </style>
   </head>
@@ -485,6 +521,9 @@
         <div id="playerLabel"></div>
         <div id="status">Select a game mode to start</div>
         
+        <!-- NEW: Waiting Animation Container -->
+        <div id="waitingAnimation" style="display: none;"></div>
+        
         <div class="board" id="board"></div>
         
         <button id="resetButton">Reset Game</button>
@@ -515,6 +554,7 @@
       let gameId = null;
       let isComputerGame = false;
       let selectedMode = null;
+      let waitingAnimationInterval = null;
 
       // DOM Elements
       const modeSelection = document.getElementById("modeSelection");
@@ -535,6 +575,7 @@
       const sendButton = document.getElementById("sendButton");
       const chatDiv = document.getElementById("chatDiv");
       const gameOptions = document.getElementById("gameOptions");
+      const waitingAnimation = document.getElementById("waitingAnimation");
       
       // Mode selection
       modeCards.forEach(card => {
@@ -563,16 +604,65 @@
         modeSelection.style.display = "none";
       });
 
+      // NEW: Create and start the waiting animation
+      function createWaitingAnimation() {
+        waitingAnimation.innerHTML = '';
+        waitingAnimation.className = 'waiting-animation';
+        waitingAnimation.style.padding = '10px';
+        // Create a 3x3 grid for the animation
+        for (let i = 0; i < 9; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'animation-cell';
+          cell.dataset.index = i;
+          waitingAnimation.appendChild(cell);
+        }
+        
+        // Animation sequence
+        let counter = 0;
+        
+        // Clear any existing interval
+        if (waitingAnimationInterval) {
+          clearInterval(waitingAnimationInterval);
+        }
+        
+        waitingAnimationInterval = setInterval(() => {
+          const index = Math.floor(Math.random() * 9);
+          const symbol = Math.random() > 0.5 ? 'X' : 'O';
+          const cell = waitingAnimation.querySelector(`.animation-cell[data-index="${index}"]`);
+          
+          if (!cell.textContent) {
+            cell.textContent = symbol;
+            cell.className = 'animation-cell';
+            cell.classList.add(symbol === 'X' ? 'animation-x' : 'animation-o');
+            
+            // Clear symbol after animation
+            setTimeout(() => {
+              cell.textContent = '';
+              cell.className = 'animation-cell';
+            }, 3000);
+          }
+          
+          counter++;
+          if (counter > 50) {
+            clearInterval(waitingAnimationInterval);
+          }
+        }, 400);
+      }
+
       function showLoadingStatus(message) {
-        statusEl.innerHTML = `
-          ${message}
-          <div class="loading">
-            <div></div>
-            <div></div>
-            <div></div>
-          </div>
-        `;
+        statusEl.textContent = message;
         statusEl.classList.add("status-waiting");
+        
+        // Show waiting animation
+        waitingAnimation.style.display = "grid";
+        createWaitingAnimation();
+      }
+      
+      function hideWaitingAnimation() {
+        waitingAnimation.style.display = "none";
+        if (waitingAnimationInterval) {
+          clearInterval(waitingAnimationInterval);
+        }
       }
 
       // Chat functionality
@@ -696,6 +786,7 @@
         
         boardEl.classList.add("show");
         resetButton.style.display = "block";
+        hideWaitingAnimation();
       });
 
       socket.on("updateBoard", (data) => {
@@ -732,6 +823,7 @@
           } else {
             updateStatus("Opponent's turn", "status-opponent-turn");
           }
+          hideWaitingAnimation(); // Hide animation when game actually starts
         } else {
           updateStatus(data.message);
         }
@@ -741,6 +833,7 @@
           resetButton.style.display = "block";
           linkContainer.style.display = "none";
           chatDiv.style.display = "block";
+          hideWaitingAnimation();
         }
       });
 
